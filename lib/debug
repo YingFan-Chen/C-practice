@@ -1,0 +1,92 @@
+#pragma once
+#include <bits/stdc++.h>
+
+#ifndef _PRINT_FORMAT
+#define _PRINT_FORMAT
+template <typename T> void _print(T x){std::cout << x;}
+void _print(char x){std::cout << "\'" << x << "\'";}
+void _print(std::string x){std::cout << "\"" << x << "\"";}
+template <typename T1, typename T2> void _print(std::pair<T1, T2> x){
+    std::cout << "<";
+    _print(x.first);
+    std::cout << ", ";
+    _print(x.second);
+    std::cout << ">";
+}
+template<typename T> void _print(std::vector<T> x){
+    std::string delim = "";
+    std::cout << "[" ;
+    for(auto &i : x){
+        std::cout << delim ;
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+template <typename T> void _print(std::stack<T> x){
+    std::string delim = "";
+    std::cout << "(stack) [" ;
+    while(!x.empty()){
+        std::cout << delim ;
+        auto i = x.top();
+        x.pop();
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+template <typename T1, typename T2> void _print(std::map<T1, T2> x){
+    std::string delim = "";
+    std::cout << "(map) [" ;
+    for(auto &i : x){
+        std::cout << delim ;
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+template <typename T1, typename T2> void _print(std::unordered_map<T1, T2> x){
+    std::string delim = "";
+    std::cout << "(unordered_map) [" ;
+    for(auto &i : x){
+        std::cout << delim ;
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+template <typename T> void _print(std::set<T> x){
+    std::string delim = "";
+    std::cout << "(set) [" ;
+    for(auto &i : x){
+        std::cout << delim ;
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+template <typename T> void _print(std::unordered_set<T> x){
+    std::string delim = "";
+    std::cout << "(unordered_set) [" ;
+    for(auto &i : x){
+        std::cout << delim ;
+        _print(i);
+        delim = ", " ;
+    }
+    std::cout << "]" ;
+}
+#endif
+
+
+#ifndef DEBUG
+#define DEBUG
+template <typename T> void debug(T x){
+    _print(x);
+    std::cout << "\n";
+}
+template <typename T> void debug(std::string s, T x){
+    std::cout << s << " : ";
+    _print(x);
+    std::cout << "\n";
+}
+#endif

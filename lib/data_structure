@@ -1,0 +1,74 @@
+#pragma once
+#include <bits/stdc++.h>
+#define ll long long
+
+#ifndef _DISJOINT_SET
+#define _DISJOINT_SET
+class disjoint_set{
+        std::vector<ll> v;
+    public : 
+        disjoint_set(ll n){
+            v.assign(n, -1);
+        }
+        ll find(ll x){
+            if(v[x] < 0) return x;
+            else{
+                ll root = find(v[x]);
+                v[x] = root;
+                return root;
+            }
+        }
+        void merge(ll x, ll y){
+            ll root1 = find(x), root2 = find(y);
+            if(root1 != root2){
+                if(v[root1] < v[root2]){
+                    v[root1] += v[root2];
+                    v[root2] = root1;
+                }else{
+                    v[root2] += v[root1];
+                    v[root1] = root2;
+                }
+            }
+            return ;
+        }
+        /* merge method will merge according to size of two sets, and deterministic_merge method will merge set y to set x. */
+        void deterministic_merge(ll x, ll y){
+            ll root1 = find(x), root2 = find(y);
+            if(root1 != root2){
+                v[root1] += v[root2];
+                v[root2] = root1;
+            }
+            return ;
+        }
+        ll size(ll x){
+            return - v[find(x)];
+        }
+};
+#endif
+
+#ifndef _BINARY_INDEX_TREE
+#define _BINARY_INDEX_TREE
+class binary_index_tree{
+        ll size;
+        std::vector<ll> v;
+    public:
+        binary_index_tree(ll n) : size(n) {
+            v.assign(n + 1, 0);
+        }
+        void update(ll index, ll x){
+            while(index <= size){
+                v[index] += x;
+                index += index & (-index);
+            }
+            return ;
+        }
+        ll query(ll index){
+            ll res = 0;
+            while(index){
+                res += v[index];
+                index -= index & (-index);
+            }
+            return res;
+        }
+};
+#endif
