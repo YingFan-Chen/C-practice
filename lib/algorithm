@@ -1,0 +1,130 @@
+#pragma once
+#include <bits/stdc++.h>
+#define ll long long
+using namespace std;
+
+#ifndef _AC_AUTOMATON
+#define _AC_AUTOMATON
+/*Node implementation*/
+class AC_automaton{
+    public : 
+        class TrieNode{
+            public : 
+                const static int max_val = 26;
+                TrieNode *fail;
+                vector<TrieNode*> childs;
+                int self_len = 0;
+                vector<int> suffix_len;
+                TrieNode(){
+                    childs.assign(max_val, nullptr);
+                } 
+        };
+
+        string text;
+        vector<string> patterns;
+        TrieNode* root;
+        AC_automaton(string _text, vector<string> _patterns) : text(_text), patterns(_patterns){
+            root = new TrieNode();
+            for(auto &s : patterns) insert(s);
+            make_fail();
+        }
+        void insert(string pattern){
+            int n = pattern.size();
+            TrieNode *cur = root;
+            for(int i = 0; i < n; i ++){
+                int index = pattern[i] - 'a';
+                if(cur->childs[index] == nullptr)
+                    cur->childs[index] = new TrieNode();
+                cur = cur->childs[index];
+            }
+            cur->self_len = n;
+        }
+        void make_fail(){
+            queue<TrieNode*> q;
+            root->fail = root;
+            q.push(root);
+            while(q.size()){
+                TrieNode *cur = q.front();
+                q.pop();
+                for(int i = 0; i < cur->max_val; i ++){
+                    TrieNode *cur_child = cur->childs[i];
+                    if(cur_child != nullptr){
+                        cur_child->fail = root;
+                        TrieNode *fafail = cur->fail, *fafail_child = fafail->childs[i];
+                        while(fafail != root or (fafail_child != nullptr and fafail_child != cur_child)){
+                            if(fafail_child != nullptr){
+                                cur_child->fail = fafail_child;
+                                cur_child->suffix_len.clear();
+                                if(fafail_child->self_len) cur_child->suffix_len.push_back(fafail_child->self_len);
+                                for(auto len : fafail_child->suffix_len) cur_child->suffix_len.push_back(len);
+                                break;
+                            }else fafail = fafail->fail;
+                        }
+                        q.push(cur_child);
+                    }
+                }
+            }
+        }
+        vector<pair<int, int>> query(){
+            TrieNode *cur = root;
+            vector<pair<int, int>> pos;
+            for(int i = 0; i < text.size(); i ++){
+                int val = text[i] - 'a';
+                while(cur != root or cur->childs[val] != nullptr){
+                    if(cur->childs[val] != nullptr){
+                        cur = cur->childs[val];
+                        if(cur->self_len) pos.push_back({i - cur->self_len + 1, i});
+                        for(auto &j : cur->suffix_len) pos.push_back({i - j + 1, i});
+                        break;
+                    }else{
+                        cur = cur->fail;
+                    }
+                }
+            }
+            return pos;
+        }
+};
+#endif
+
+#ifndef _KMP
+#define _KMP
+class KMP{
+    public : 
+        string pattern, text;
+        vector<int> pi;
+        KMP(string _pattern, string _text) : pattern(_pattern), text(_text){
+            pi.assign(pattern.size(), 0);
+            pi_function();
+        }
+        void pi_function(){
+            int n = pattern.size(), j;
+            for(int i = 1; i < n; i ++){
+                j = pi[i - 1];
+                while(j > 0){
+                    if(pattern[j] == pattern[i]){
+                        pi[i] = j + 1; 
+                        break;
+                    }
+                    else j = pi[j - 1];
+                }
+            }
+        }
+        vector<pair<int, int>> query(){
+            int n = pattern.size(), i = 0, j = 0;
+            vector<pair<int, int>> pos;
+            while(i < text.size()){
+                if(text[i] == pattern[j]){
+                    i ++;
+                    j ++;
+                    if(j == n){
+                        pos.push_back({i - n, i - 1});
+                        j = pi[j - 1];
+                    }
+                }
+                else if(j) j = pi[j - 1];
+                else i ++;
+            }
+            return pos;
+        }
+};
+#endif

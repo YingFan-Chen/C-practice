@@ -9,39 +9,21 @@ using namespace std;
 int main(){
     ll n;
     cin >> n;
-    vector<int> C(10, 0);
-    for(int i = 1; i < 10; i++) cin >> C[i];
-    vector<string> dp(n + 1, "");
-    for(int i = 1; i <= n; i ++){
-        set<int> biggest;
-        int max_size = 0;
-        for(int j = 1; j < 10; j ++){
-            int tmp = i - C[j];
-            if(tmp >= 0) max_size = max(max_size, (int) dp[tmp].size());
-        }
-        for(int j = 1; j < 10; j ++){
-            int tmp = i - C[j];
-            if(tmp >= 0 and (int) dp[tmp].size() == max_size) biggest.insert(j);
-        }
-        int j;
-        for(j = 0; j < max_size; j ++){
-            char max_char = 0;
-            //set<int> dup = biggest;
-            for(auto &k : biggest){
-                max_char =  max(max_char, dp[i - C[k]][j]);
-            }
-            for(auto &k : biggest){
-                if(dp[i - C[k]][j] != max_char) biggest.erase(k); //***************
-            }
-            dp[i] += (char) max_char;
-            if(biggest.size() == 1) break;
-        }
-        debug(biggest);
-        if(biggest.size() == 1){
-            int k = *biggest.begin();
-            for(j = j + 1; j < max_size; j ++) dp[i] += dp[i - C[k]][j];
-        }
-        dp[i] += (char) (*biggest.rbegin() + '0');
+    vector<int> c(10);
+    vector<pair<int, int>> C(10);
+    for(int i = 1; i < 10; i++){
+        cin >> c[i];
+        C[i] = {c[i], i};
     }
-    cout << dp[n] << endl;
+    sort(C.begin(), C.end());
+    int minCost = C[1].first, maxDigit = n / minCost;
+    for(int i = maxDigit; i > 0; i --){
+        int d;
+        for(int j = 1; j <= 9; j ++){
+            if(n - c[j] >= (i - 1) * minCost) d = j;
+        }
+        cout << d;
+        n -= c[d];
+    }
+    cout << endl;
 }
