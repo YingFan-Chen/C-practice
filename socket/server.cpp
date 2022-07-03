@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <sys/stat.h>  //mkdir()
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h>   //fd_set
+#include <sys/time.h>
 #include <unistd.h>
 #include <string.h>
 #include <map>
