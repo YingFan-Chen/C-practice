@@ -10,10 +10,13 @@ using namespace std;
 
 class client{
     public:
-        int sock;
+        int sock, file_size;
         bool login;
+        FILE* fp;
         client(int _sock) : sock(_sock){
             login = false;
+            fp = nullptr;
+            file_size = 0;
         }
         inline bool operator== (const client &i) const{
             return sock == i.sock;
@@ -25,10 +28,13 @@ void set_address(struct sockaddr_in &);
 int set_master_socket(struct sockaddr*);
 void poll(vector<client> &, int, struct sockaddr*);
 void client_operation(client &, struct sockaddr*, vector<client> &);
+void header(char*, int, char*);
+void openfile(client&, char*, char*);
+void closefile(client&);
 
 
 int main(){
-    struct sockaddr_in address;
+    /*struct sockaddr_in address;
     sqlite3 *db;
     int master_sock;
     vector<client> clients;
@@ -41,8 +47,17 @@ int main(){
 
     while(true){
         poll(clients, master_sock, (struct sockaddr *) &address);
-    }
+    }*/
 
+    char *http_header;
+    char *header_template = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 10\r\n\r\n\0";
+    char* file_type = "text/html";
+    if(!strcmp(file_type, "text/html")){
+        
+        sprintf(http_header, header_template, file_type, 10);
+    }
+    
+    cout << strlen(http_header);
     
 }
 
@@ -155,7 +170,7 @@ void poll(vector<client> &clients, int master_sock, struct sockaddr *address){
 void client_operation(client &client_obj, struct sockaddr *address, vector<client> &clients){
     int valread;
     int addr_len = sizeof(*address), sock = client_obj.sock;
-    char read_buffer[4096];
+    char read_buffer[4096], write_buffer[4096];
 
     memset(read_buffer, 0, 4096);
     valread = recv(sock, read_buffer, 4096, 0);
@@ -169,6 +184,44 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
     }
     else if(client_obj.login == false){
         fprintf(stderr, "%s\n", read_buffer);
-        
+        if(client_obj.fp == nullptr) {
+            openfile(client_obj, "./login.html", "r");
+            char* http_header = new char[256];
+            header(http_header, client_obj.file_size, "text/html");
+            send(sock, http_header, strlen(http_header), 0);
+            free(http_header);
+        }
+
+        memset(write_buffer, 0, 4096);
+        while(valread = fread(write_buffer, sizeof(char), 4096, client_obj.fp)){
+            send(sock, write_buffer, valread, 0);
+            memset(write_buffer, 0, 4096);
+        }
+
+        closefile(client_obj);
     }
+}
+
+void header(char* http_header, int file_size, char* file_type){
+    char header_template[256] = "HTTP/1.1 200 OK\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %d\r\n\r\n";
+
+    if(!strcmp(file_type, "text/html")){    
+        sprintf(http_header, header_template, file_type, file_size);
+    }
+}
+ 
+void openfile(client &client_obj, char* file_name, char* mode){
+    struct stat sb;
+    if(stat(file_name, &sb) == -1){
+        perror("Fail to stat ");
+    }
+
+    client_obj.fp = fopen(file_name, mode);
+    client_obj.file_size = (int) sb.st_size;
+}
+
+void closefile(client &client_obj){
+    fclose(client_obj.fp);
+    client_obj.fp = nullptr;
+    client_obj.file_size = 0;
 }

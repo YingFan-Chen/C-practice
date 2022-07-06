@@ -2,64 +2,66 @@
 #define ll long long
 #define ll_max LONG_LONG_MAX
 #ifndef ONLINE_JUDGE
-//#include "..\..\lib\debug"
+#include "..\..\lib\debug"
 #endif
 using namespace std;
 
+ll up(ll x, ll b){
+    if(x % b == 0) return x;
+    if(x > 0) return x / b * b + b;
+    else return x / b * b;
+}
+
+ll down(ll x, ll b){
+    if(x % b == 0) return x;
+    if(x > 0) return x / b * b;
+    else return x / b * b - b;
+}
 
 int main(){
     int t;
+    cin >> t;
     for(int i = 0; i < t; i++){
         ll b, k, sx, sy, gx, gy;
         cin >> b >> k >> sx >> sy >> gx >> gy;
         vector<pair<ll, ll>> s, g;
 
-        double tmp = sx / (double) b;
-        s.push_back({floor(tmp), sy});
-        s.push_back({ceil(tmp), sy});
-        tmp = gx / (double) b;
-        g.push_back({floor(tmp), gy});
-        g.push_back({ceil(tmp), gy});
-        tmp = sy / (double) b;
-        s.push_back({sx, floor(tmp)});
-        s.push_back({sx, ceil(tmp)});
-        tmp = gy / (double) b;
-        g.push_back({gx, floor(tmp)});
-        g.push_back({gx, ceil(tmp)});
+        s.push_back({down(sx, b), sy});
+        s.push_back({up(sx, b), sy});
+        g.push_back({down(gx, b), gy});
+        g.push_back({up(gx, b), gy});
+        s.push_back({sx, down(sy, b)});
+        s.push_back({sx, up(sy, b)});
+        g.push_back({gx, down(gy, b)});
+        g.push_back({gx, up(gy, b)});
         
         // 0 good point
         ll res = (abs(gx - sx) + abs(gy - sy)) * k;
+        ll dist;
         
         //2 good point
-        vector<vector<ll>> dist(4, vector<ll> (4, ll_max));
         for(int i = 0; i < 4; i ++){
             for(int j = 0; j < 4; j ++){
                 auto [x1, y1] = s[i];
                 auto [x2, y2] = g[j];
-                if(x1 % b == 0 and x2 % b == 0 and y1 / b == y2 / b){
-                    ll mini;
-                    mini = abs(y2 - y1) + abs(x2 - x1) * k;
-                    tmp = y1 / (double) b;
-                    mini = min(mini, abs((ll) floor(tmp) - y1) + abs((ll) floor(tmp) - y2) + abs(x2 - x1));
-                    mini = min(mini, abs((ll) ceil(tmp) - y1) + abs((ll) ceil(tmp) - y2) + abs(x2 - x1));
-                    mini += (abs(sx - x1) + abs(sy - y1) + abs(gx - x2) + abs(gy - y2)) * k;
-                    dist[i][j] = mini;
+                if(x1 % b == 0 and x2 % b == 0 and down(y2, b) == down(y1, b)){
+                    dist = abs(y2 - y1) + abs(x2 - x1) * k;
+                    dist = min(dist, abs(down(y1, b) - y1) + abs(down(y1, b) - y2) + abs(x2 - x1));
+                    dist = min(dist, abs(up(y1, b) - y1) + abs(up(y1, b) - y2) + abs(x2 - x1));
+                    dist += (abs(sx - x1) + abs(sy - y1) + abs(gx - x2) + abs(gy - y2)) * k;
+                    res = min(res, dist);
                 }
-                else if(y1 % b == 0 and y2 % b == 0 and x1 / b == x2 / b){
-                    ll mini;
-                    mini = abs(y2 - y1) * k + abs(x2 - x1);
-                    tmp = x1 / (double) b;
-                    mini = min(mini, abs((ll) floor(tmp) - x1) + abs((ll) floor(tmp) - x2) + abs(y2 - y1));
-                    mini = min(mini, abs((ll) ceil(tmp) - x1) + abs((ll) ceil(tmp) - x2) + abs(y2 - y1));
-                    mini += (abs(sx - x1) + abs(sy - y1) + abs(gx - x2) + abs(gy - y2)) * k;
-                    dist[i][j] = mini;
+                else if(y1 % b == 0 and y2 % b == 0 and  down(x2, b) == down(x1, b)){
+                    dist = abs(y2 - y1) * k + abs(x2 - x1);
+                    dist = min(dist, abs(down(x1, b) - x1) + abs(down(x1, b) - x2) + abs(y2 - y1));
+                    dist = min(dist, abs(up(x1, b) - x1) + abs(up(x1, b) - x2) + abs(y2 - y1));
+                    dist += (abs(sx - x1) + abs(sy - y1) + abs(gx - x2) + abs(gy - y2)) * k;
+                    res = min(res, dist);
                 }else{
-                    dist[i][j] = abs(x2 - x1) + abs(y2 - y1) + (abs(sx - x1) + abs(sy - y1) + abs(gx - x1) + abs(gy - y1)) * k;
+                    dist = abs(x2 - x1) + abs(y2 - y1) + (abs(sx - x1) + abs(sy - y1) + abs(gx - x2) + abs(gy - y2)) * k;
+                    res = min(res, dist);
                 }
             }
-        }
-        for(auto &i : dist){
-            for(auto &j : i) res = min(res, j);
         }
         cout << res << endl;
     }

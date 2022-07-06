@@ -28,7 +28,7 @@ void set_address(struct sockaddr_in &);
 int set_master_socket(struct sockaddr*);
 void poll(vector<client> &, int, struct sockaddr*);
 void client_operation(client &, struct sockaddr*, vector<client> &);
-char* header(int, char*);
+void header(char*, int, string);
 void openfile(client&, char*, char*);
 void closefile(client&);
 
@@ -176,31 +176,33 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
     else if(client_obj.login == false){
         fprintf(stderr, "%s\n", read_buffer);
         if(client_obj.fp == nullptr) {
-            openfile(client_obj, ./login.html, "r");
-            char* http_header = header(client_obj.file_size, "text/html");
-            send(sock, http_header, sizeof(http_header), 0);
+            openfile(client_obj, "./login.html", "r");
+            char http_header[256];
+            header(http_header, client_obj.file_size, "text/html");
+            send(sock, http_header, strlen(http_header), 0);
         }
 
+        memset(write_buffer, 0, 4096);
         while(valread = fread(write_buffer, sizeof(char), 4096, client_obj.fp)){
             send(sock, write_buffer, valread, 0);
+            memset(write_buffer, 0, 4096);
         }
 
         closefile(client_obj);
     }
 }
 
-char* header(int file_size, char* file_type){
-    char* res;
-    char* header_template = "HTTP/1.1 200 OK\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %d\r\n\r\n";
+void header(char *http_header, int file_size, string file_type){
+    char *header_template = "HTTP/1.1 200 OK\r\nContent-Type: %s; charset=utf-8\r\nContent-Length: %d\r\n\r\n";
     
-    if(file_type == "html"){
-        sprintf(res, header_template, file_type, file_size);
+    if(file_type == "text/html"){
+        sprintf(http_header, header_template, file_type, file_size);
+    }else if(file_type == "image/*"){
+        sprintf(http_header, header_template, file_type, file_size);
     }
-
-    return res;
- }
+}
  
- void openfile(client &client_obj, char* file_name, char* mode){
+void openfile(client &client_obj, char* file_name, char* mode){
     struct stat sb;
     if(stat(file_name, &sb) == -1){
         perror("Fail to stat ");
@@ -208,10 +210,10 @@ char* header(int file_size, char* file_type){
 
     client_obj.fp = fopen(file_name, mode);
     client_obj.file_size = (int) sb.st_size;
- }
+}
 
- void closefile(client &client_obj){
-    fclose(fp);
+void closefile(client &client_obj){
+    fclose(client_obj.fp);
     client_obj.fp = nullptr;
     client_obj.file_size = 0;
- }
+}
