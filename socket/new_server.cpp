@@ -23,6 +23,13 @@ class client{
         }
 };
 
+class http{
+    public:
+        string method, path;
+        vector<pair<string, string>> value;
+        http(){}
+};
+
 sqlite3* set_environment();
 void set_address(struct sockaddr_in &);
 int set_master_socket(struct sockaddr*);
@@ -31,6 +38,10 @@ void client_operation(client &, struct sockaddr*, vector<client> &);
 void header(char*, int, string);
 void openfile(client&, char*, char*);
 void closefile(client&);
+void getHTTP(http &, string &);
+void Login(client &);
+void sendfile(client &);
+void Icon(client &);
 
 
 int main(){
@@ -161,34 +172,35 @@ void poll(vector<client> &clients, int master_sock, struct sockaddr *address){
 void client_operation(client &client_obj, struct sockaddr *address, vector<client> &clients){
     int valread;
     int addr_len = sizeof(*address), sock = client_obj.sock;
-    char read_buffer[4096], write_buffer[4096];
+    char read_buffer[4096];
 
     memset(read_buffer, 0, 4096);
-    valread = recv(sock, read_buffer, 4096, 0);
+    valread = recv(client_obj.sock, read_buffer, 4096, 0);
 
     //This means someone disconnected
     if(valread == 0){
-        getpeername(sock , (struct sockaddr*)&address , (socklen_t*) &addr_len); 
-        close(sock);
+        getpeername(client_obj.sock , (struct sockaddr*)&address , (socklen_t*) &addr_len); 
+        close(client_obj.sock);
         auto iter= find(clients.begin(), clients.end(), client_obj);
         clients.erase(iter);
     }
-    else if(client_obj.login == false){
-        fprintf(stderr, "%s\n", read_buffer);
-        if(client_obj.fp == nullptr) {
-            openfile(client_obj, "./login.html", "r");
-            char http_header[256];
-            header(http_header, client_obj.file_size, "text/html");
-            send(sock, http_header, strlen(http_header), 0);
+    else{
+        fprintf(stderr, "%s\n\n", read_buffer);
+        http HTTP;
+        string response = read_buffer;
+        getHTTP(HTTP, response);
+
+        if(client_obj.login == false){
+            if(HTTP.path == "/favicon.ico"){
+                Icon(client_obj);
+            }else{
+                Login(client_obj);
+            }
         }
 
-        memset(write_buffer, 0, 4096);
-        while(valread = fread(write_buffer, sizeof(char), 4096, client_obj.fp)){
-            send(sock, write_buffer, valread, 0);
-            memset(write_buffer, 0, 4096);
+        if(client_obj.login){
+            
         }
-
-        closefile(client_obj);
     }
 }
 
@@ -216,4 +228,79 @@ void closefile(client &client_obj){
     fclose(client_obj.fp);
     client_obj.fp = nullptr;
     client_obj.file_size = 0;
+}
+
+void getHTTP(http &http_obj, string &response){
+    int i;
+    int n = response.size();
+    string tmp;
+    for(i = 0; i < n; i ++){
+        if(response[i] == ' ') break;
+        tmp += response[i];
+    }
+    http_obj.method = tmp;
+    tmp.clear();
+    i ++;
+    for(; i < n; i ++){
+        if(response[i] == ' ') break;
+        tmp += response[i];
+    }
+    http_obj.path = tmp;
+    i = response.find("\r\n\r\n");
+    i += 4;
+    tmp.clear();
+    pair<string, string> value;
+    for(; i < n; i ++){
+        if(response[i] == '='){
+            value.first = tmp;
+            tmp.clear();
+        }else if(response[i] == '&'){
+            value.second = tmp;
+            http_obj.value.push_back(value);
+            tmp.clear();
+        }else{
+            tmp += response[i];
+            if(i == n - 1){
+                value.second = tmp;
+                http_obj.value.push_back(value);
+                tmp.clear();
+            }
+        }
+    }
+}
+
+void Login(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./login.html", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "text/html");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
+}
+
+void sendfile(client &client_obj){
+    int valread;
+    char write_buffer[4096];
+    memset(write_buffer, 0, 4096);
+    while(valread = fread(write_buffer, sizeof(char), 4096, client_obj.fp)){
+        send(client_obj.sock, write_buffer, valread, 0);
+        memset(write_buffer, 0, 4096);
+    }
+}
+
+void Icon(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./icon.png", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "image/*");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
 }

@@ -34,30 +34,7 @@ void closefile(client&);
 
 
 int main(){
-    /*struct sockaddr_in address;
-    sqlite3 *db;
-    int master_sock;
-    vector<client> clients;
-
-    db = set_environment();
-
-    set_address(address);
-
-    master_sock = set_master_socket((struct sockaddr *) &address);
-
-    while(true){
-        poll(clients, master_sock, (struct sockaddr *) &address);
-    }*/
-
-    char *http_header;
-    char *header_template = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: 10\r\n\r\n\0";
-    char* file_type = "text/html";
-    if(!strcmp(file_type, "text/html")){
-        
-        sprintf(http_header, header_template, file_type, 10);
-    }
     
-    cout << strlen(http_header);
     
 }
 
