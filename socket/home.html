@@ -6,25 +6,30 @@
   </head>
 
   <body>
-    <h1> Service We Offer </h1>
-
-    <form action = "add" method = "post" target = "_self">
-        <input type = "radio" name= "service" value="add" checked>
-        <input type = "submit" value= "add"> 
+    <h1> Choose Your Operation </h1>
+    <form>
+      <fieldset>
+        <p>
+          <label>
+            <input type = "radio" name = "operation" value = "add.html"> ADD
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type = "radio" name = "operation" value = "delete.html"> DELETE
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type = "radio" name= "operation" value = "chat.html"> CHAT
+          </label>
+        </p>
+        <p>
+          <label>
+            <input type = "submit">
+          </label>
+        </p>
+      </fieldset>
     </form>
-    <br>
-
-    <form action = "delete" method = "post" target = "_self">
-      <input type = "radio" name= "service" value="delete" checked>
-      <input type = "submit" value= "delete"> 
-    </form>
-    <br>
-
-    <form action = "chat" method = "post" target = "_self">
-      <input type = "radio" name= "service" value="chat" checked>
-      <input type = "submit" value= "chat"> 
-    </form>
-    <br>
-
   </body>
 </html>

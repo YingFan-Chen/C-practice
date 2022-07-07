@@ -1,0 +1,19 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+const int16_t nm = 512, mod = 17, m = 16, n = 32;   
+// x^n = -1, y^n = -1 
+
+void schonhage(int16_t* p1, int16_t* p2, int16_t* res){
+    int16_t _p1[1024], _p2[1024];
+    int16_t i = 0, j = 0;
+    for(){
+
+    }
+}
+
+
+
+int main(){
+
+}

@@ -13,6 +13,7 @@ class client{
         int sock, file_size;
         bool login;
         FILE* fp;
+        string account;
         client(int _sock) : sock(_sock){
             login = false;
             fp = nullptr;
@@ -30,11 +31,18 @@ class http{
         http(){}
 };
 
+static int callback1(void *data, int argc, char **argv, char **azColName){
+    for(int i = 0; i < argc; i ++){
+        strncat((char*) data, argv[i], 1024);
+    }
+    return 0;
+}
+
 sqlite3* set_environment();
 void set_address(struct sockaddr_in &);
 int set_master_socket(struct sockaddr*);
-void poll(vector<client> &, int, struct sockaddr*);
-void client_operation(client &, struct sockaddr*, vector<client> &);
+void poll(vector<client> &, int, struct sockaddr*, sqlite3* db);
+void client_operation(client &, struct sockaddr*, vector<client> &, sqlite3* db);
 void header(char*, int, string);
 void openfile(client&, char*, char*);
 void closefile(client&);
@@ -42,6 +50,11 @@ void getHTTP(http &, string &);
 void Login(client &);
 void sendfile(client &);
 void Icon(client &);
+bool checkPassword(http &, sqlite3*, client &);
+void Home(client &);
+void Add(client &);
+void Delete(client &);
+void Chat(client &);
 
 
 int main(){
@@ -57,10 +70,9 @@ int main(){
     master_sock = set_master_socket((struct sockaddr *) &address);
 
     while(true){
-        poll(clients, master_sock, (struct sockaddr *) &address);
+        poll(clients, master_sock, (struct sockaddr *) &address, db);
     }
 
-    
 }
 
 sqlite3* set_environment(){
@@ -131,7 +143,7 @@ int set_master_socket(struct sockaddr *address){
     return master_sock;
 }
 
-void poll(vector<client> &clients, int master_sock, struct sockaddr *address){
+void poll(vector<client> &clients, int master_sock, struct sockaddr *address, sqlite3 *db){
     int max_fd, new_sock;
     int addr_len = sizeof(*address);
     fd_set readfds;
@@ -149,7 +161,7 @@ void poll(vector<client> &clients, int master_sock, struct sockaddr *address){
     if(select(max_fd + 1, &readfds, NULL, NULL, NULL) < 0 and errno != EINTR){
         perror("Fail to select ");
     }else{
-        fprintf(stderr, "Select successfully....\n");
+        //fprintf(stderr, "Select successfully....\n");
     }
 
     if(FD_ISSET(master_sock, &readfds)){
@@ -164,12 +176,12 @@ void poll(vector<client> &clients, int master_sock, struct sockaddr *address){
     for(auto &i : clients){
         if(FD_ISSET(i.sock, &readfds)){
             /**************************************************/
-            client_operation(i, address, clients);
+            client_operation(i, address, clients, db);
         }
     }
 }
 
-void client_operation(client &client_obj, struct sockaddr *address, vector<client> &clients){
+void client_operation(client &client_obj, struct sockaddr *address, vector<client> &clients, sqlite3* db){
     int valread;
     int addr_len = sizeof(*address), sock = client_obj.sock;
     char read_buffer[4096];
@@ -179,10 +191,10 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
 
     //This means someone disconnected
     if(valread == 0){
-        getpeername(client_obj.sock , (struct sockaddr*)&address , (socklen_t*) &addr_len); 
+        /*getpeername(client_obj.sock , (struct sockaddr*)&address , (socklen_t*) &addr_len); 
         close(client_obj.sock);
         auto iter= find(clients.begin(), clients.end(), client_obj);
-        clients.erase(iter);
+        clients.erase(iter);*/
     }
     else{
         fprintf(stderr, "%s\n\n", read_buffer);
@@ -193,13 +205,31 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
         if(client_obj.login == false){
             if(HTTP.path == "/favicon.ico"){
                 Icon(client_obj);
+            }else if(HTTP.path == "/home.html"){
+                if(checkPassword(HTTP, db, client_obj)) Home(client_obj);
+                else Login(client_obj);
             }else{
                 Login(client_obj);
             }
         }
+        else if(client_obj.login){
+            if(HTTP.path == "/favicon.ico"){
+                Icon(client_obj);
+            }else if(HTTP.path == "/home.html"){
+                Home(client_obj);
+            }else if(HTTP.path == "/home.html?operation=add.html"){
+                Add(client_obj);
+            }else if(HTTP.path == "/home.html?operation=delete.html"){
+                Delete(client_obj);
+            }else if(HTTP.path == "/home.html?operation=chat.html"){
+                Chat(client_obj);
+            }else if(HTTP.path == "/chatlist"){
+                
+            }else if(HTTP.path == "/deletelist"){
 
-        if(client_obj.login){
-            
+            }else{
+                Login(client_obj);
+            }
         }
     }
 }
@@ -297,6 +327,91 @@ void Icon(client &client_obj){
         openfile(client_obj, "./icon.png", "r");
         char http_header[256];
         header(http_header, client_obj.file_size, "image/*");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
+}
+
+bool checkPassword(http &HTTP, sqlite3* db, client &client_obj){
+    char sql_command[1024], sql_back[1024];
+    char *err;
+    int rc;
+
+    sprintf(sql_command, "SELECT password FROM accounts WHERE account='%s';", HTTP.value[0].second.c_str());
+    rc = sqlite3_exec(db, sql_command, callback1, (void*) sql_back, &err);
+    if(rc != SQLITE_OK){
+        fprintf(stderr, "Fail to check password : %s\n", err);
+    }else{
+        if(strlen(sql_back)){
+            string password = sql_back;
+            if(password == HTTP.value[1].second){
+                client_obj.login = true;
+                client_obj.account = HTTP.value[0].second;
+                return true;
+            }
+        }else{
+            memset(sql_command, 0, 1024);
+            sprintf(sql_command, "INSERT INTO accounts (account, password) VALUES('%s', '%s');", HTTP.value[0].second.c_str(), HTTP.value[1].second.c_str());
+            rc = sqlite3_exec(db, sql_command, NULL, NULL, &err);
+            if(rc != SQLITE_OK){
+                fprintf(stderr, "Fail to insert account : %s\n", err);
+            }else{
+                client_obj.login = true;
+                client_obj.account = HTTP.value[0].second;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void Home(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./home.html", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "text/html");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
+}
+
+void Add(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./add.html", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "text/html");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
+}
+
+void Delete(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./delete.html", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "text/html");
+        send(client_obj.sock, http_header, strlen(http_header), 0);
+    }
+
+    sendfile(client_obj);
+
+    closefile(client_obj);
+}
+
+void Chat(client &client_obj){
+    if(client_obj.fp == nullptr) {
+        openfile(client_obj, "./chat.html", "r");
+        char http_header[256];
+        header(http_header, client_obj.file_size, "text/html");
         send(client_obj.sock, http_header, strlen(http_header), 0);
     }
 

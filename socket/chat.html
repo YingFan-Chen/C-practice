@@ -7,18 +7,20 @@
   <body>
     <h1> Chat With A Friend </h1>
     <form action = "chatroom" method = "post" target = "_self">
-      <div id = chatlist>
-          <script>
-              var request1 = new XMLHttpRequest();
-              request1.open("GET", "chatlist", true);
-              request1.send();
-              request1.onload = function() { 
-                  document.getElementById("chatlist").innerHTML = request1.responseText;
-              }
-          </script>
-      </div>
-    <br>
-    <input type = "submit" value = "send">
+      <fieldset></fieldset>
+        <div id = chatlist>
+            <script>
+                var request1 = new XMLHttpRequest();
+                request1.open("GET", "chatlist", true);
+                request1.send();
+                request1.onload = function() { 
+                    document.getElementById("chatlist").innerHTML = request1.responseText;
+                }
+            </script>
+        </div>
+        <br>
+        <input type = "submit" value = "send">
+      </fieldset>
     </form>
   </body>
 </html>
