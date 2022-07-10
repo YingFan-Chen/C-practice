@@ -1,8 +1,8 @@
 #include <bits/stdc++.h>
 #include <sys/stat.h>
-#include <sqlite3.h>
 #include <netinet/in.h>
-#include<unistd.h>
+#include <sqlite3.h>
+#include <unistd.h>
 
 using namespace std;
 #define server_port 8080
@@ -38,6 +38,14 @@ static int callback1(void *data, int argc, char **argv, char **azColName){
     return 0;
 }
 
+static int callback2(void *data, int argc, char **argv, char **azColName){
+    for(int i = 0; i<argc; i++){
+        strcat((char*) data, argv[i]);
+        strcat((char*) data, " ");
+    }
+    return 0;
+}
+
 sqlite3* set_environment();
 void set_address(struct sockaddr_in &);
 int set_master_socket(struct sockaddr*);
@@ -55,6 +63,9 @@ void Home(client &);
 void Add(client &);
 void Delete(client &);
 void Chat(client &);
+void Addfriend(client &, http &, sqlite3*);
+void Chatlist(client &, sqlite3*);
+void Deletelist(client &, sqlite3*);
 
 
 int main(){
@@ -175,7 +186,6 @@ void poll(vector<client> &clients, int master_sock, struct sockaddr *address, sq
 
     for(auto &i : clients){
         if(FD_ISSET(i.sock, &readfds)){
-            /**************************************************/
             client_operation(i, address, clients, db);
         }
     }
@@ -215,7 +225,7 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
         else if(client_obj.login){
             if(HTTP.path == "/favicon.ico"){
                 Icon(client_obj);
-            }else if(HTTP.path == "/home.html"){
+            }else if(HTTP.path == "/home.html" and HTTP.value.empty()){
                 Home(client_obj);
             }else if(HTTP.path == "/home.html?operation=add.html"){
                 Add(client_obj);
@@ -224,11 +234,15 @@ void client_operation(client &client_obj, struct sockaddr *address, vector<clien
             }else if(HTTP.path == "/home.html?operation=chat.html"){
                 Chat(client_obj);
             }else if(HTTP.path == "/chatlist"){
-                
+                Chatlist(client_obj, db);
             }else if(HTTP.path == "/deletelist"){
-
+                Deletelist(client_obj, db);
+            }else if(HTTP.path == "/home.html" and HTTP.value[0].first == "addfriend"){
+                Addfriend(client_obj, HTTP, db);
+            }else if(HTTP.path == "/home.html" and HTTP.value[0].first == "deletefriend"){
+                Deletefriend
             }else{
-                Login(client_obj);
+                Home(client_obj);
             }
         }
     }
@@ -240,6 +254,8 @@ void header(char *http_header, int file_size, string file_type){
     if(file_type == "text/html"){
         sprintf(http_header, header_template, file_type, file_size);
     }else if(file_type == "image/*"){
+        sprintf(http_header, header_template, file_type, file_size);
+    }else{
         sprintf(http_header, header_template, file_type, file_size);
     }
 }
@@ -341,6 +357,7 @@ bool checkPassword(http &HTTP, sqlite3* db, client &client_obj){
     int rc;
 
     sprintf(sql_command, "SELECT password FROM accounts WHERE account='%s';", HTTP.value[0].second.c_str());
+    memset(sql_back, 0, 1024);
     rc = sqlite3_exec(db, sql_command, callback1, (void*) sql_back, &err);
     if(rc != SQLITE_OK){
         fprintf(stderr, "Fail to check password : %s\n", err);
@@ -418,4 +435,116 @@ void Chat(client &client_obj){
     sendfile(client_obj);
 
     closefile(client_obj);
+}
+
+void Addfriend(client &client_obj, http &HTTP, sqlite3* db){
+    int rc;
+    char sql_command[1024], sql_back[1024];
+    char *err;
+
+    memset(sql_command, 0, 1024);
+    sprintf(sql_command, "SELECT account FROM accounts WHERE account='%s';", HTTP.value[0].second.c_str());
+    memset(sql_back, 0, 1024);
+    rc = sqlite3_exec(db, sql_command, callback1, (void*) sql_back, &err);
+    if(rc != SQLITE_OK){
+        fprintf(stderr, "Fail to select account : %s\n", err);
+    }else if(strlen(sql_back)){
+        char name1[64], name2[64];
+        strncpy(name1, client_obj.account.c_str(), 64);
+        strncpy(name2, HTTP.value[0].second.c_str(), 64);
+        
+        memset(sql_command, 0, 1024);
+        sprintf(sql_command, "INSERT INTO relations (client, friends, chatroom) VALUES('%s', '%s', '%s_%s');", name1, name2, name1, name2);
+        rc = sqlite3_exec(db, sql_command, NULL, NULL, &err);
+        memset(sql_command, 0, 1024);
+        if(rc != SQLITE_OK){
+            fprintf(stderr, "Fail to insert relation1 : %s\n", err);
+        }
+        sprintf(sql_command, "INSERT INTO relations (client, friends, chatroom) VALUES('%s', '%s', '%s_%s');", name2, name1, name1, name2);
+        rc = sqlite3_exec(db, sql_command, NULL, NULL, &err);
+        if(rc != SQLITE_OK){
+            fprintf(stderr, "Fail to insert relation2 : %s\n", err);
+        }
+
+        memset(sql_command, 0, 1024);
+        sprintf(sql_command, "CREATE TABLE IF NOT EXISTS %s_%s (line INT, sender varchar(255), content varchar(255));", name1, name2);
+        rc = sqlite3_exec(db, sql_command, NULL, NULL, &err);
+        if(rc != SQLITE_OK){
+            fprintf(stderr, "Fail to create chatroom : %s\n", err);
+        }
+    }
+    Home(client_obj);
+}
+
+void Chatlist(client &client_obj, sqlite3* db){
+    int rc;
+    char sql_command[1024], sql_back[1024];
+    char *err;
+
+    memset(sql_command, 0, 1024);
+    sprintf(sql_command, "SELECT friends FROM relations WHERE client='%s';", client_obj.account.c_str());
+    memset(sql_back, 0, 1024);
+    rc = sqlite3_exec(db, sql_command, callback2, (void*) sql_back, &err);
+    if(rc != SQLITE_OK){
+        fprintf(stderr, "Fail to select friends : %s\n", err);
+    }
+
+    string data = sql_back, tmp = "";
+    char tmp_buffer[1024], write_buffer[1024 << 3], http_header[256];
+    memset(write_buffer, 0, 1024 << 3);
+    for(int i = 0; i < data.size(); i ++){
+        if(data[i] == ' '){
+            memset(tmp_buffer, 0, 1024);
+            sprintf(tmp_buffer, "<input type='radio' name='chatfriend' value='%s'> %s<br>", tmp.c_str(), tmp.c_str());
+            strncat(write_buffer, tmp_buffer, 1024 << 3);
+            tmp = "";
+        }else{
+            tmp += data[i];
+            if(i == data.size() - 1){
+                memset(tmp_buffer, 0, 1024);
+                sprintf(tmp_buffer, "<input type='radio' name='chatfriend' value='%s'> %s<br>", tmp.c_str(), tmp.c_str());
+                strncat(write_buffer, tmp_buffer, 1024 << 3);
+            }
+        }
+    }
+
+    header(http_header, strlen(write_buffer), "*/*");
+    send(client_obj.sock, http_header, strlen(http_header), 0);
+    send(client_obj.sock, write_buffer, strlen(write_buffer), 0);
+}
+
+void Deletelist(client &client_obj, sqlite3* db){
+    int rc;
+    char sql_command[1024], sql_back[1024];
+    char *err;
+
+    memset(sql_command, 0, 1024);
+    sprintf(sql_command, "SELECT friends FROM relations WHERE client='%s';", client_obj.account.c_str());
+    memset(sql_back, 0, 1024);
+    rc = sqlite3_exec(db, sql_command, callback2, (void*) sql_back, &err);
+    if(rc != SQLITE_OK){
+        fprintf(stderr, "Fail to select friends : %s\n", err);
+    }
+
+    string data = sql_back, tmp = "";
+    char tmp_buffer[1024], write_buffer[1024 << 3], http_header[256];
+    for(int i = 0; i < data.size(); i ++){
+        if(data[i] == ' '){
+            memset(tmp_buffer, 0, 1024);
+            sprintf(tmp_buffer, "<input type='radio' name='deletefriend' value='%s'> %s<br>", tmp.c_str(), tmp.c_str());
+            strncat(write_buffer, tmp_buffer, 1024 << 3);
+            tmp = "";
+        }else{
+            tmp += data[i];
+            if(i == data.size() - 1){
+                memset(tmp_buffer, 0, 1024);
+                sprintf(tmp_buffer, "<input type='radio' name='deletefriend' value='%s'> %s<br>", tmp.c_str(), tmp.c_str());
+                strncat(write_buffer, tmp_buffer, 1024 << 3);
+            }
+        }
+    }
+
+    header(http_header, strlen(write_buffer), "*/*");
+    send(client_obj.sock, http_header, strlen(http_header), 0);
+    send(client_obj.sock, write_buffer, strlen(write_buffer), 0);
 }

@@ -6,31 +6,37 @@
 #endif
 using namespace std;
 
-const ll mod = 1E9 + 7, base = 7777;
-
-
 int main(){
     string s, t;
     cin >> s >> t;
-
-    vector<ll> poly(500000, 0);
-    poly[0] = 1;
-    for(int i = 1; i < 500000; i ++) poly[i] = (poly[i - 1] * base) % mod;
-    
-    ll sum = 0;
-    unordered_set<ll> prefix;
-    for(int i = 0; i < s.size(); i ++){
-        sum = (sum + s[i] * poly[i]) % mod;
-        prefix.insert(sum);
+    int n = s.size(), m = t.size();
+    int pi[n];
+    memset(pi, 0, sizeof(pi));
+    for(int i = 1; i < n; i ++){
+        int j = pi[i - 1];
+        while(j){
+            if(s[i] == s[j]) break;
+            else j = pi[j - 1];
+        }
+        if(s[i] == s[j])  pi[i] = j + 1;
     }
 
-    sum = 0;
-    int index = t.size() - 1, pre = - 1;
-    ll count = 0;
-    
-    while(){
-        sum = (sum * base + t[index]) % mod;
-        if(prefix.find(sum) == )
-    }
 
+    int dp[m];
+    memset(dp, 0, sizeof(dp));
+    int base = 0, cur = 0;
+    while(cur < m){
+        if(cur - base == n or t[cur] != s[cur - base]){
+            if(cur - base == 0){
+                cout << -1 << endl;
+                return 0;
+            }
+            base = cur - pi[cur - base - 1];
+        }else{
+            if(base == 0) dp[cur] = 1;
+            else dp[cur] = dp[base - 1] + 1;
+            cur ++;
+        }
+    }
+    cout << dp[m - 1] << endl;
 }
