@@ -23,8 +23,23 @@ void makeC(int16_t m, int16_t* C){
     }
 }
 
-void Cooley_Tukey(int16_t l, int16_t r, int16_t n, int16_t *p){
-    
+void Cooley_Tukey(int16_t l, int16_t r, int16_t n, int16_t *p, int16_t c){
+    int16_t tmp[n];
+    int16_t mid = (l + r) >> 1;
+
+    for(int16_t i = 0, j = mid + 1; i <= mid; i += n, j += n){
+        for(int16_t k = 0; k < n; ++ k){
+            if(c >= 0){
+                tmp[(k + c) % n] = p[j + k];
+            }else{
+                tmp[(k - c) % n] = -p[j + k];
+            }
+        }
+        for(int16_t k = 0; k < n; ++ k){
+            p[j + k] = p[i + k] - tmp[k];
+            p[i + k] += tmp[k];
+        }
+    }    
 }
 
 
