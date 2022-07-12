@@ -1,6 +1,10 @@
 #include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 
-void makeC(int16_t m, int16_t* C){
+
+/*Evaluate value of C used in Cooley Tukey*/
+void MakeC(int16_t m, int16_t* C){
     C[0] = m;
     int16_t base = 0, top = 1;
     while(!(C[base] & 1)){
@@ -17,12 +21,15 @@ void Cooley_Tukey(int16_t l, int16_t r, int16_t n, int16_t *p, int16_t c){
     int16_t mid = (l + r) >> 1;
 
     for(int16_t i = l, j = mid + 1; i <= mid; i += n, j += n){
+        /*Shifting*/
         for(int16_t k = 0; k < n; ++ k){
             tmp[(k + c) % n] = p[j + k];
         }
         for(int16_t k = 0; k < c; ++ k){
             tmp[k] = - tmp[k];
         }
+
+        /*a + bc & a - bc*/
         for(int16_t k = 0; k < n; ++ k){
             p[j + k] = p[i + k] - tmp[k];
             p[i + k] += tmp[k];
@@ -30,11 +37,26 @@ void Cooley_Tukey(int16_t l, int16_t r, int16_t n, int16_t *p, int16_t c){
     }    
 }
 
+void Polynomial_Multiple(int16_t *p1, int16_t *p2, int16_t *p3, int16_t l, int16_t n){
+    for(int16_t i = 0; i < n; ++ i){
+        for(int16_t j = 0; j < n ; ++ j){
+            int32_t tmp = p1[l + i] * p2[l + j];
+            if(i + j >= n){
+                p3[l + (i + j) % n] -= tmp;
+            }else{
+                p3[l + (i + j)] += tmp;
+            }
+        }
+    }
+}
 
-void schonhage(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t* p3, int16_t* C){
+
+void Schonhage_Multiple(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t* p3, int16_t* C){
     int16_t mn = m * n;
-    int16_t p1_[mn << 1], p2_[mn << 1];
+    int16_t p1_[mn << 1], p2_[mn << 1], p3_[mn << 1];
+    memset(p3_, 0, mn << 1);
 
+    /* Broaden input array*/
     int16_t i = 0, j = 0;
     while(i < mn >> 1){
         for(int16_t _ = 0; _ < m; ++ _){
@@ -56,6 +78,7 @@ void schonhage(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t* p3, int1
         j += m;
     }
 
+    /*Cooley Tukey Bufferfly*/
     int16_t k = 1;
     for(i = mn; i > n; i >>= 1){
         for(j = 0; j < mn << 1; j += i, ++ k){
@@ -64,5 +87,12 @@ void schonhage(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t* p3, int1
         }
     }
 
+    /*Multiple*/
+    for(i = 0; i < mn << 1; i += n){
+        Polynomial_Multiple(p1, p2, p3_, i, n);
+        for(j = 0; j < mn << 1; j ++)
+            printf("%d ", p3_[j] % 7);
+        printf("\n");
+    }
     
 }
