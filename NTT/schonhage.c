@@ -54,7 +54,7 @@ void Polynomial_Multiple(int16_t *p1, int16_t *p2, int16_t *p3, int16_t l, int16
 void Schonhage_Multiple(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t* p3, int16_t* C){
     int16_t mn = m * n;
     int16_t p1_[mn << 1], p2_[mn << 1], p3_[mn << 1];
-    memset(p3_, 0, mn << 1);
+    memset(p3_, 0, sizeof(p3_));
 
     /* Broaden input array*/
     int16_t i = 0, j = 0;
@@ -89,10 +89,9 @@ void Schonhage_Multiple(int16_t m, int16_t n, int16_t* p1, int16_t* p2, int16_t*
 
     /*Multiple*/
     for(i = 0; i < mn << 1; i += n){
-        Polynomial_Multiple(p1, p2, p3_, i, n);
-        for(j = 0; j < mn << 1; j ++)
-            printf("%d ", p3_[j] % 7);
-        printf("\n");
+        Polynomial_Multiple(p1_, p2_, p3_, i, n);
     }
+
+    
     
 }

@@ -11,4 +11,9 @@ int main(){
     MakeC(2, C);
 
     Schonhage_Multiple(2, 4, p1, p2, p3, C);
+
+    int16_t a[4] = {5, 5, 3, -5};
+    int16_t b[4];
+    memset(b, 0, sizeof(b));
+
 }
