@@ -3,17 +3,15 @@
 using namespace std;
 
 int main(){
-    int16_t p1[8] = {1,2,3,4,-1,-2,-3,-4};
-    int16_t p2[8] = {1,2,3,4,-1,-2,-3,-4};
-    int16_t p3[8] = {1,2,3,4,-1,-2,-3,-4};
-    int16_t C[4]; // size : m
-    memset(C, 0, sizeof(C));
-    MakeC(2, C);
+    int16_t p1[512];
+    int16_t p2[512];
+    int16_t p3[512];
+    memset(p3, 0, sizeof(p3));
 
-    Schonhage_Multiple(2, 4, p1, p2, p3, C);
+    
 
-    int16_t a[4] = {5, 5, 3, -5};
-    int16_t b[4];
-    memset(b, 0, sizeof(b));
 
+
+    Schonhage_Multiple(16, 32, p1, p2, p3);
+    for(int i = 0; i < 8; ++ i) cout << p3[i] << " ";
 }

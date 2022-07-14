@@ -1,5 +1,7 @@
-new_server : new_server.cpp
-	g++ new_server.cpp -o new_server -lsqlite3 
+.PHONY: all
 
-test : test.cpp
-	g++ test.cpp -o test -lsqlite3
+all : server
+
+server : server.cpp
+	g++ server.cpp -o server -lsqlite3 -B C:\SQLite
+
