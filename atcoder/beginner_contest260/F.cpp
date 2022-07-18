@@ -2,50 +2,35 @@
 #define ll long long
 #define ll_max LONG_LONG_MAX
 #ifndef ONLINE_JUDGE
-#include "C:\Users\josep\code\c++\lib\debug"
+#include "..\..\lib\debug"
 #endif
 using namespace std;
-
-bool DFS(int root, vector<int> &depth, int count, unordered_map<int, vector<int>> &edge, vector<int> &from){
-    depth[root] = count;
-    for(auto i : edge[root]){
-        if(depth[i] == -1){
-            from[i] = root;
-            if(DFS(i, depth, count + 1, edge, from)) return true;
-        }else if(count - depth[i] == 3){
-            int tmp = root;
-            for(int j = 0; j < 4; j ++){
-                cout << tmp << " ";
-                tmp = from[tmp];
-            }
-            return true;
-        }
-    }
-    return false;
-}
+constexpr int kN = 1000000;
 
 int main(){
     int s, t, m;
     cin >> s >> t >> m;
-    unordered_map<int, vector<int>> edge;
-    for(int i = 1; i <= m; i ++){
-        int v, u;
-        cin >> v >> u;
-        edge[v].push_back(u);
-        edge[u].push_back(v);
+    vector<bitset<kN>> edge(t + 1, bitset<kN> ());
+    for (int i = 0; i < m; i++){
+        int u, v;
+        cin >> u >> v;
+        edge[v - s][u] = 1;
     }
-    vector<int> depth, from;
-    depth.resize(s + t + 1, -1);
-    from.resize(s + t + 1, -1);
-    if(DFS(1, depth, 0, edge, from)){
-        return 0;
+    for(int i = 1; i < t; i ++){
+        for(int j = i + 1; j <= t; j ++){
+            bitset<kN> tmp = edge[i] & edge[j];
+            if(tmp.count() >= 2){
+                cout << s + i << " " << s + j << " ";
+                int count = 2;
+                for(int k = 1; k <= kN, count < 4; k ++){
+                    if(tmp[k] == 1){
+                        cout << k << " ";
+                        count ++;
+                    }
+                }
+                return 0;
+            }
+        }
     }
-
-    depth.resize(s + t + 1, -1);
-    if(DFS(s + 1, depth, 0, edge, from)){
-        return 0;
-    }
-
     cout << -1;
-
 }
