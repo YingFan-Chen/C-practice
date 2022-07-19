@@ -10,27 +10,27 @@ constexpr int kN = 1000000;
 int main(){
     int s, t, m;
     cin >> s >> t >> m;
-    vector<bitset<kN>> edge(t + 1, bitset<kN> ());
+    vector<vector<int>> edge(s + 1, vector<int> ());
     for (int i = 0; i < m; i++){
         int u, v;
         cin >> u >> v;
-        edge[v - s][u] = 1;
+        edge[u].push_back(v);
     }
-    for(int i = 1; i < t; i ++){
-        for(int j = i + 1; j <= t; j ++){
-            bitset<kN> tmp = edge[i] & edge[j];
-            if(tmp.count() >= 2){
-                cout << s + i << " " << s + j << " ";
-                int count = 2;
-                for(int k = 1; k <= kN, count < 4; k ++){
-                    if(tmp[k] == 1){
-                        cout << k << " ";
-                        count ++;
+    
+    vector<vector<int>> dp(t + 1, vector<int> (t + 1));
+    for(int i = 1; i <= s; i ++){
+        for(auto j : edge[i]){
+            for(auto k : edge[i]){
+                if(j != k){
+                    if(dp[j - s][k - s] == 0) dp[j - s][k - s] = i;
+                    else{
+                        cout << j << " " << k << " " << i << " " << dp[j -s][k - s];
+                        return 0;
                     }
                 }
-                return 0;
             }
         }
     }
+
     cout << -1;
 }
