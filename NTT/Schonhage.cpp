@@ -2,6 +2,8 @@
 using namespace std;
 
 class Schonhage{
+    
+
 public:
     int32_t m, n, mn, mn2, mlog, nlog, mod;
     vector<int32_t> p1, p2, p3, p1_ext, p2_ext, p3_ext;
