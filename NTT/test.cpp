@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include "Schonhage.cpp"
+#include "Schonhage2048.cpp"
 using namespace std;
 static constexpr int mod = 5227, m = 16, n = 32; // Cause we use int32_t, the mod must less than square of INT32_MAX or it will overflow.
 
