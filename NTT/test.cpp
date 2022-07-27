@@ -2,14 +2,24 @@
 #include "Schonhage.cpp"
 #include "Schonhage2048.cpp"
 using namespace std;
-static constexpr int mod = 5227, m = 16, n = 32; // Cause we use int32_t, the mod must less than square of INT32_MAX or it will overflow.
+static constexpr int mod = 2048, m = 32, n = 32;
 
 void debug(vector<int> &v, int n){
     for(int i = 0; i < v.size(); i ++ ){
         if(i != 0 and i % n == 0){
             cout << endl;
         }
-        printf("%5d ", v[i]);
+        printf("%4d ", v[i]);
+    }
+    cout << endl << "================================" << endl;
+}
+
+void debuga(array<int16_t,1024> &v, int n){
+    for(int i = 0; i < v.size(); i ++){
+        if(i != 0 and i % n == 0){
+            cout << endl;
+        }
+        printf("%4d ", v[i]);
     }
     cout << endl << "================================" << endl;
 }
@@ -43,19 +53,20 @@ public:
 
 int main(){
     vector<int> p1(m * n), p2(m * n);
+    array<int16_t, 1024> a1, a2;
     srand(time(NULL));
 
     //Generate p1, p2;
-    for(int i = 0; i < m * n; ++ i){
-        p1[i] = rand() % mod;
-        p2[i] = rand() % mod;
+    for(int i = 0; i < 509; ++ i){
+        a1[i] = p1[i] = rand() % mod;
+        a2[i] = p2[i] = rand() % mod;
     }
 
     Schonhage S(m, n, mod);
     S.p1 = p1;
     S.p2 = p2;
     S.Multiple();
-    debug(S.p3, n);
+    //debug(S.p3, n);
 
     Normal N(m, n, mod);
     N.p1 = p1;
@@ -63,13 +74,7 @@ int main(){
     N.Multiple();
     debug(N.p3, n);
 
-    bool flag = true;
-    for(int i = 0; i < m * n; i ++){
-        if(S.p3[i] != N.p3[i]){
-            flag = false;
-            break;
-        }
-    }
-    if(flag) cout << "True" << endl;
-    else cout << "False" << endl;
+    Schonhage1024 S1024(a1, a2);
+    S1024.multiple();
+    debuga(S1024.res, n);
 }
