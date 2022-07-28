@@ -46,8 +46,8 @@ public:
                 /*
                     Reverse bit
                 */
-                int16_t tmp = revBit, C = 0;
-                for(k = 0; k < log_of_n; k ++)
+                int16_t tmp = revBit, C = 0; 
+                for(k = 0; k < log_of_m; k ++)
                 {
                     C = (tmp & 1) ? C << 1 | 1 : C << 1;
                     tmp >>= 1; 
@@ -70,7 +70,7 @@ public:
                         }
                     }
 
-                    for(l = 0; l < n; l ++)
+                    for(l = 0; l < m; l ++)
                     {
                         p1_ext[k + l] = p1_ext[k + l - (i >> 1)] - tmp_array1[l];
                         p1_ext[k + l - (i >> 1)] += tmp_array1[l];
@@ -111,7 +111,7 @@ public:
             for(j = mn - i; j >= 0; j -= i, revBit --)
             {
                 int16_t tmp = revBit, C = 0;
-                for(k = 0; k < log_of_n; k ++)
+                for(k = 0; k < log_of_m; k ++)
                 {
                     C = (tmp & 1) ? C << 1 | 1 : C << 1;
                     tmp >>= 1;
@@ -162,6 +162,29 @@ public:
         for(i = 0; i < nn; i ++)
         {
             res[i] = (res[i] >> log_of_n) % 2048;
+        }
+    }
+};
+
+
+class Normal_multi{
+public:
+    vector<int16_t> p1, p2, res;
+    Normal_multi(vector<int16_t> &p1, vector<int16_t> &p2): p1(p1), p2(p2){
+        res.resize(p1.size(), 0);
+    }
+
+    void multiple(){
+        for(int i = 0; i < p1.size(); i ++){
+            for(int j = 0; j < p2.size(); j ++){
+                if(i + j >= p1.size()){
+                    res[(i + j) % p1.size()] -= p1[i] * p2[j];
+                    res[(i + j) % p1.size()] %= 2048;
+                }else{
+                    res[i + j] += p1[i] * p2[j];
+                    res[i + j] %= 2048;
+                }
+            }
         }
     }
 };

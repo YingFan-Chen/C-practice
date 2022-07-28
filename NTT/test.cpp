@@ -4,56 +4,34 @@
 using namespace std;
 static constexpr int mod = 2048, m = 32, n = 32;
 
-void debug(vector<int> &v, int n){
+template <typename T>
+void debug(vector<T> &v, int n){
     for(int i = 0; i < v.size(); i ++ ){
         if(i != 0 and i % n == 0){
             cout << endl;
         }
-        printf("%4d ", v[i]);
+        printf("%5d ", v[i]);
     }
     cout << endl << "================================" << endl;
 }
 
-void debuga(array<int16_t,1024> &v, int n){
+template <typename T>
+void debugarray(array<T, 1024> &v, int n){
     for(int i = 0; i < v.size(); i ++){
         if(i != 0 and i % n == 0){
             cout << endl;
         }
-        printf("%4d ", v[i]);
+        printf("%5d ", v[i]);
     }
     cout << endl << "================================" << endl;
 }
 
 
-class Normal{
-public:
-    int m, n, mn, mod;
-    vector<int> p1, p2, p3;
-    Normal(int m_in, int n_in, int mod_in) : m(m_in), n(n_in), mod(mod_in){
-        mn = m * n;
-        p1.resize(mn, 0);
-        p2.resize(mn, 0);
-        p3.resize(mn, 0);
-    }
-
-    void Multiple(){
-        for(int i = 0; i < mn; ++ i){
-            for(int j = 0; j < mn; ++ j){
-                int tmp = (p1[i] * p2[j]) % mod;
-                if(i + j >= mn){
-                    p3[(i + j) % mn] = (p3[(i + j) % mn] - tmp + mod) % mod;
-                }else{
-                    p3[i + j] = (p3[i + j] + tmp) % mod;
-                }
-            }
-        }
-    }
-};
-
-
 int main(){
-    vector<int> p1(m * n), p2(m * n);
+    vector<int16_t> p1(m * n), p2(m * n);
     array<int16_t, 1024> a1, a2;
+    a1.fill(0);
+    a2.fill(0);
     srand(time(NULL));
 
     //Generate p1, p2;
@@ -62,19 +40,33 @@ int main(){
         a2[i] = p2[i] = rand() % mod;
     }
 
-    Schonhage S(m, n, mod);
+    /*Schonhage S(m, n, mod);
     S.p1 = p1;
     S.p2 = p2;
     S.Multiple();
-    //debug(S.p3, n);
+    debug(S.p3, n);*/
 
-    Normal N(m, n, mod);
+    /*Normal N(m, n, mod);
     N.p1 = p1;
     N.p2 = p2;
     N.Multiple();
-    debug(N.p3, n);
+    debug(N.p3, n);*/
 
     Schonhage1024 S1024(a1, a2);
     S1024.multiple();
-    debuga(S1024.res, n);
+    //debugarray(S1024.res, n);
+
+    Normal_multi N1024(p1, p2);
+    N1024.multiple();
+    //debug(N1024.res, n);
+
+
+    for(int i = 0; i < 1024; i ++){
+        if((S1024.res[i] - N1024.res[i]) % 2048 != 0){
+            cout << S1024.res[i] << " " << N1024.res[i] << endl;
+            cout << "false" << endl;
+            return 0;
+        }
+    }
+    cout << "True" << endl;
 }

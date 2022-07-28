@@ -8,7 +8,7 @@ using namespace std;
 class Schonhage{
 public:
     int32_t m, n, mn, mn2, mlog, nlog, mod;
-    vector<int32_t> p1, p2, p3, p1_ext, p2_ext, p3_ext;
+    vector<int16_t> p1, p2, p3, p1_ext, p2_ext, p3_ext;
     
     //Constructor
     Schonhage(int32_t m_in, int32_t n_in, int32_t mod_in) : m(m_in), n(n_in), mod(mod_in){
@@ -104,6 +104,8 @@ public:
             }
         }
 
+        for(auto i : p1_ext) cout << i << " "; 
+
         //Mult
         for(i = 0; i < mn2; i += n){
             for(j = 0; j < n; ++ j){
@@ -162,6 +164,32 @@ public:
         int32_t denom = Pow(n, mod - 2);
         for(int i = 0; i < mn; ++ i){
             p3[i] = (p3[i] * denom) % mod;
+        }
+    }
+};
+
+
+class Normal{
+public:
+    int m, n, mn, mod;
+    vector<int16_t> p1, p2, p3;
+    Normal(int m_in, int n_in, int mod_in) : m(m_in), n(n_in), mod(mod_in){
+        mn = m * n;
+        p1.resize(mn, 0);
+        p2.resize(mn, 0);
+        p3.resize(mn, 0);
+    }
+
+    void Multiple(){
+        for(int i = 0; i < mn; ++ i){
+            for(int j = 0; j < mn; ++ j){
+                int tmp = (p1[i] * p2[j]) % mod;
+                if(i + j >= mn){
+                    p3[(i + j) % mn] = (p3[(i + j) % mn] - tmp + mod) % mod;
+                }else{
+                    p3[i + j] = (p3[i + j] + tmp) % mod;
+                }
+            }
         }
     }
 };
