@@ -167,11 +167,11 @@ public:
 };
 
 
-class Normal_multi{
+class Normal{
 public:
-    vector<int16_t> p1, p2, res;
-    Normal_multi(vector<int16_t> &p1, vector<int16_t> &p2): p1(p1), p2(p2){
-        res.resize(p1.size(), 0);
+    array<int16_t, 1024> p1, p2, res;
+    Normal(array<int16_t, 1024> &p1, array<int16_t, 1024> &p2): p1(p1), p2(p2){
+        res.fill(0);
     }
 
     void multiple(){
